@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Introduction &#8212; Panel Data Models with Fixed Effects  documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Original data" href="original_data.html" />
+    <link rel="prev" title="Welcome to the Panel Data Models with Fixed Effects project’s documentation!" href="index.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>Panel Data Models with Fixed Effects  documentation</span></a></h1>
+        <h2 class="heading"><span>Introduction</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">Welcome to the Panel Data Models with Fixed Effects project’s documentation!</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="original_data.html">Original data</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <div class="section" id="introduction">
+<span id="id1"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>In this project we present the main ideas of Bai (2009), Bai and Ng (2002), and Moon and Weidner (2015). We start with comparing the convergence properties and identification conditions for least squares estimators in panel data models, and then use econometric theory for factor model estimations in practice. We provide the algorithms in Bai (2009) and Bai, Ng (2002) in Python, replicate some Monte Carlo simulation results of the papers and investigate the simulation with other data generating processes and visualize them in R Language. In the end, we return to the previous empirical example and look at the estimation using the estimator proposed by Bai (2009).</p>
+<div class="section" id="project-structure">
+<span id="id2"></span><h2>Project structure<a class="headerlink" href="#project-structure" title="Permalink to this headline">¶</a></h2>
+<p>The logic of this project works by step of the analysis:</p>
+<ol class="arabic simple">
+<li><p>Data management</p></li>
+<li><p>Monte Carlo simulations and real data application</p></li>
+<li><p>Visualisation and results formatting</p></li>
+<li><p>Research paper and presentation</p></li>
+</ol>
+<p>The main part of this project is Monte Carlo simulations and real data estimation. See section <a class="reference internal" href="analysis.html#monte-carlo-simulations-and-real-data-application"><span class="std std-ref">Monte Carlo Simulations and Real Data Application</span></a> for more detail.</p>
+</div>
+<div class="section" id="getting-started">
+<span id="id3"></span><h2>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<p><strong>This assumes you have installed:</strong></p>
+<ul class="simple">
+<li><p>Miniconda or Anaconda</p></li>
+<li><p>a modern LaTeX distribution (e.g. TeXLive, MacTex, or MikTex)</p></li>
+</ul>
+<ol class="arabic simple">
+<li><p>Create the environment from the <cite>environment.yml</cite> file.</p></li>
+</ol>
+<div class="highlight-console notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="gp">$ </span>conda env create -f environment.yml
+</pre></div>
+</td></tr></table></div>
+<ol class="arabic simple" start="2">
+<li><p>Activate the newly created conda environment.</p></li>
+</ol>
+<div class="highlight-console notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="gp">$ </span>conda activate panel_data_models_with_fixed_effects
+</pre></div>
+</td></tr></table></div>
+<ol class="arabic simple" start="3">
+<li><p>Run pytask to start all tasks automaticly.</p></li>
+</ol>
+<div class="highlight-console notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="gp">$ </span>conda develop .
+<span class="gp">$ </span>pytask
+</pre></div>
+</td></tr></table></div>
+<p>After that, all build result can be found in <cite>bld</cite> folder.</p>
+</div>
+<div class="section" id="built-result">
+<span id="id4"></span><h2>Built result<a class="headerlink" href="#built-result" title="Permalink to this headline">¶</a></h2>
+<p>The main analysis task takes hours to run. For quickly scan, some built result can be found in this repository:
+<a class="reference external" href="https://github.com/YuxinWang2020/panel_data_models_build_result">panel_data_models_build_result</a></p>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">Welcome to the Panel Data Models with Fixed Effects project’s documentation!</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="original_data.html">Original data</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-March, Yuxin Wang.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.3.
+    </div>
+  </body>
+</html>

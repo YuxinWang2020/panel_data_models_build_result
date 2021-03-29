@@ -1,0 +1,46 @@
+\indexentry{module@\spxentry{module}!src.data\_management.task\_get\_cigar\_data@\spxentry{src.data\_management.task\_get\_cigar\_data}|hyperpage}{5}
+\indexentry{src.data\_management.task\_get\_cigar\_data@\spxentry{src.data\_management.task\_get\_cigar\_data}!module@\spxentry{module}|hyperpage}{5}
+\indexentry{module@\spxentry{module}!src.analysis.monte\_carlo\_dgp@\spxentry{src.analysis.monte\_carlo\_dgp}|hyperpage}{8}
+\indexentry{src.analysis.monte\_carlo\_dgp@\spxentry{src.analysis.monte\_carlo\_dgp}!module@\spxentry{module}|hyperpage}{8}
+\indexentry{dgp\_additive\_fixed\_effects\_model() (in module src.analysis.monte\_carlo\_dgp)@\spxentry{dgp\_additive\_fixed\_effects\_model()}\spxextra{in module src.analysis.monte\_carlo\_dgp}|hyperpage}{8}
+\indexentry{dgp\_additive\_fixed\_effects\_model\_no\_iid() (in module src.analysis.monte\_carlo\_dgp)@\spxentry{dgp\_additive\_fixed\_effects\_model\_no\_iid()}\spxextra{in module src.analysis.monte\_carlo\_dgp}|hyperpage}{8}
+\indexentry{dgp\_interactive\_fixed\_effects\_model() (in module src.analysis.monte\_carlo\_dgp)@\spxentry{dgp\_interactive\_fixed\_effects\_model()}\spxextra{in module src.analysis.monte\_carlo\_dgp}|hyperpage}{9}
+\indexentry{dgp\_interactive\_fixed\_effects\_model\_no\_iid() (in module src.analysis.monte\_carlo\_dgp)@\spxentry{dgp\_interactive\_fixed\_effects\_model\_no\_iid()}\spxextra{in module src.analysis.monte\_carlo\_dgp}|hyperpage}{10}
+\indexentry{dgp\_interactive\_fixed\_effects\_model\_with\_common\_and\_time\_invariant() (in module src.analysis.monte\_carlo\_dgp)@\spxentry{dgp\_interactive\_fixed\_effects\_model\_with\_common\_and\_time\_invariant()}\spxextra{in module src.analysis.monte\_carlo\_dgp}|hyperpage}{10}
+\indexentry{dgp\_interactive\_fixed\_effects\_model\_with\_common\_and\_time\_invariant\_no\_iid() (in module src.analysis.monte\_carlo\_dgp)@\spxentry{dgp\_interactive\_fixed\_effects\_model\_with\_common\_and\_time\_invariant\_no\_iid()}\spxextra{in module src.analysis.monte\_carlo\_dgp}|hyperpage}{11}
+\indexentry{dgp\_random\_iid\_residual() (in module src.analysis.monte\_carlo\_dgp)@\spxentry{dgp\_random\_iid\_residual()}\spxextra{in module src.analysis.monte\_carlo\_dgp}|hyperpage}{12}
+\indexentry{dgp\_time\_invariant\_fixed\_effects\_model() (in module src.analysis.monte\_carlo\_dgp)@\spxentry{dgp\_time\_invariant\_fixed\_effects\_model()}\spxextra{in module src.analysis.monte\_carlo\_dgp}|hyperpage}{12}
+\indexentry{module@\spxentry{module}!src.analysis.simulation@\spxentry{src.analysis.simulation}|hyperpage}{13}
+\indexentry{src.analysis.simulation@\spxentry{src.analysis.simulation}!module@\spxentry{module}|hyperpage}{13}
+\indexentry{simulation\_coefficient() (in module src.analysis.simulation)@\spxentry{simulation\_coefficient()}\spxextra{in module src.analysis.simulation}|hyperpage}{13}
+\indexentry{statistics\_coefficient() (in module src.analysis.simulation)@\spxentry{statistics\_coefficient()}\spxextra{in module src.analysis.simulation}|hyperpage}{13}
+\indexentry{module@\spxentry{module}!src.analysis.task\_simulation\_coefficient@\spxentry{src.analysis.task\_simulation\_coefficient}|hyperpage}{14}
+\indexentry{src.analysis.task\_simulation\_coefficient@\spxentry{src.analysis.task\_simulation\_coefficient}!module@\spxentry{module}|hyperpage}{14}
+\indexentry{module@\spxentry{module}!src.analysis.task\_statistics\_coefficient@\spxentry{src.analysis.task\_statistics\_coefficient}|hyperpage}{14}
+\indexentry{src.analysis.task\_statistics\_coefficient@\spxentry{src.analysis.task\_statistics\_coefficient}!module@\spxentry{module}|hyperpage}{14}
+\indexentry{module@\spxentry{module}!src.analysis.task\_simulation\_factor@\spxentry{src.analysis.task\_simulation\_factor}|hyperpage}{14}
+\indexentry{src.analysis.task\_simulation\_factor@\spxentry{src.analysis.task\_simulation\_factor}!module@\spxentry{module}|hyperpage}{14}
+\indexentry{task\_factor\_estimate\_interactive\_fixed\_effects\_model() (in module src.analysis.task\_simulation\_factor)@\spxentry{task\_factor\_estimate\_interactive\_fixed\_effects\_model()}\spxextra{in module src.analysis.task\_simulation\_factor}|hyperpage}{14}
+\indexentry{task\_factor\_estimate\_random\_iid\_residual() (in module src.analysis.task\_simulation\_factor)@\spxentry{task\_factor\_estimate\_random\_iid\_residual()}\spxextra{in module src.analysis.task\_simulation\_factor}|hyperpage}{14}
+\indexentry{task\_simulation\_and\_statistics\_range\_r() (in module src.analysis.task\_simulation\_factor)@\spxentry{task\_simulation\_and\_statistics\_range\_r()}\spxextra{in module src.analysis.task\_simulation\_factor}|hyperpage}{14}
+\indexentry{module@\spxentry{module}!src.final.task\_figures\_coefficient@\spxentry{src.final.task\_figures\_coefficient}|hyperpage}{15}
+\indexentry{src.final.task\_figures\_coefficient@\spxentry{src.final.task\_figures\_coefficient}!module@\spxentry{module}|hyperpage}{15}
+\indexentry{module@\spxentry{module}!src.final.task\_tables\_coefficient@\spxentry{src.final.task\_tables\_coefficient}|hyperpage}{15}
+\indexentry{src.final.task\_tables\_coefficient@\spxentry{src.final.task\_tables\_coefficient}!module@\spxentry{module}|hyperpage}{15}
+\indexentry{module@\spxentry{module}!src.final.task\_figures\_tables\_factor@\spxentry{src.final.task\_figures\_tables\_factor}|hyperpage}{15}
+\indexentry{src.final.task\_figures\_tables\_factor@\spxentry{src.final.task\_figures\_tables\_factor}!module@\spxentry{module}|hyperpage}{15}
+\indexentry{module@\spxentry{module}!src.model\_code.interactive\_fixed\_effect@\spxentry{src.model\_code.interactive\_fixed\_effect}|hyperpage}{17}
+\indexentry{src.model\_code.interactive\_fixed\_effect@\spxentry{src.model\_code.interactive\_fixed\_effect}!module@\spxentry{module}|hyperpage}{17}
+\indexentry{InteractiveFixedEffect (class in src.model\_code.interactive\_fixed\_effect)@\spxentry{InteractiveFixedEffect}\spxextra{class in src.model\_code.interactive\_fixed\_effect}|hyperpage}{17}
+\indexentry{calculate\_sde() (InteractiveFixedEffect method)@\spxentry{calculate\_sde()}\spxextra{InteractiveFixedEffect method}|hyperpage}{17}
+\indexentry{fit() (InteractiveFixedEffect method)@\spxentry{fit()}\spxextra{InteractiveFixedEffect method}|hyperpage}{17}
+\indexentry{module@\spxentry{module}!src.model\_code.statistics@\spxentry{src.model\_code.statistics}|hyperpage}{18}
+\indexentry{src.model\_code.statistics@\spxentry{src.model\_code.statistics}!module@\spxentry{module}|hyperpage}{18}
+\indexentry{caculate\_rmse() (in module src.model\_code.statistics)@\spxentry{caculate\_rmse()}\spxextra{in module src.model\_code.statistics}|hyperpage}{18}
+\indexentry{caculate\_sde() (in module src.model\_code.statistics)@\spxentry{caculate\_sde()}\spxextra{in module src.model\_code.statistics}|hyperpage}{18}
+\indexentry{module@\spxentry{module}!src.model\_code.utils@\spxentry{src.model\_code.utils}|hyperpage}{18}
+\indexentry{src.model\_code.utils@\spxentry{src.model\_code.utils}!module@\spxentry{module}|hyperpage}{18}
+\indexentry{paste() (in module src.model\_code.utils)@\spxentry{paste()}\spxextra{in module src.model\_code.utils}|hyperpage}{18}
+\indexentry{paste0() (in module src.model\_code.utils)@\spxentry{paste0()}\spxextra{in module src.model\_code.utils}|hyperpage}{18}
+\indexentry{reduce\_concat() (in module src.model\_code.utils)@\spxentry{reduce\_concat()}\spxextra{in module src.model\_code.utils}|hyperpage}{18}
+\indexentry{stretch() (in module src.model\_code.utils)@\spxentry{stretch()}\spxextra{in module src.model\_code.utils}|hyperpage}{18}

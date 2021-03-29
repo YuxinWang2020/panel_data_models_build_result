@@ -1,0 +1,106 @@
+\begin{sphinxtheindex}
+\let\bigletter\sphinxstyleindexlettergroup
+\let\spxpagem \sphinxstyleindexpagemain
+\let\spxentry \sphinxstyleindexentry
+\let\spxextra \sphinxstyleindexextra
+
+  \bigletter C
+  \item \spxentry{caculate\_rmse()}\spxextra{in module src.model\_code.statistics}, \hyperpage{18}
+  \item \spxentry{caculate\_sde()}\spxextra{in module src.model\_code.statistics}, \hyperpage{18}
+  \item \spxentry{calculate\_sde()}\spxextra{InteractiveFixedEffect method}, \hyperpage{17}
+
+  \indexspace
+  \bigletter D
+  \item \spxentry{dgp\_additive\_fixed\_effects\_model()}\spxextra{in module src.analysis.monte\_carlo\_dgp}, 
+		\hyperpage{8}
+  \item \spxentry{dgp\_additive\_fixed\_effects\_model\_no\_iid()}\spxextra{in module src.analysis.monte\_carlo\_dgp}, 
+		\hyperpage{8}
+  \item \spxentry{dgp\_interactive\_fixed\_effects\_model()}\spxextra{in module src.analysis.monte\_carlo\_dgp}, 
+		\hyperpage{9}
+  \item \spxentry{dgp\_interactive\_fixed\_effects\_model\_no\_iid()}\spxextra{in module src.analysis.monte\_carlo\_dgp}, 
+		\hyperpage{10}
+  \item \spxentry{dgp\_interactive\_fixed\_effects\_model\_with\_common\_and\_time\_invariant()}\spxextra{in module src.analysis.monte\_carlo\_dgp}, 
+		\hyperpage{10}
+  \item \spxentry{dgp\_interactive\_fixed\_effects\_model\_with\_common\_and\_time\_invariant\_no\_iid()}\spxextra{in module src.analysis.monte\_carlo\_dgp}, 
+		\hyperpage{11}
+  \item \spxentry{dgp\_random\_iid\_residual()}\spxextra{in module src.analysis.monte\_carlo\_dgp}, 
+		\hyperpage{12}
+  \item \spxentry{dgp\_time\_invariant\_fixed\_effects\_model()}\spxextra{in module src.analysis.monte\_carlo\_dgp}, 
+		\hyperpage{12}
+
+  \indexspace
+  \bigletter F
+  \item \spxentry{fit()}\spxextra{InteractiveFixedEffect method}, \hyperpage{17}
+
+  \indexspace
+  \bigletter I
+  \item \spxentry{InteractiveFixedEffect}\spxextra{class in src.model\_code.interactive\_fixed\_effect}, 
+		\hyperpage{17}
+
+  \indexspace
+  \bigletter M
+  \item \spxentry{module}
+    \subitem \spxentry{src.analysis.monte\_carlo\_dgp}, \hyperpage{8}
+    \subitem \spxentry{src.analysis.simulation}, \hyperpage{13}
+    \subitem \spxentry{src.analysis.task\_simulation\_coefficient}, \hyperpage{14}
+    \subitem \spxentry{src.analysis.task\_simulation\_factor}, \hyperpage{14}
+    \subitem \spxentry{src.analysis.task\_statistics\_coefficient}, \hyperpage{14}
+    \subitem \spxentry{src.data\_management.task\_get\_cigar\_data}, \hyperpage{5}
+    \subitem \spxentry{src.final.task\_figures\_coefficient}, \hyperpage{15}
+    \subitem \spxentry{src.final.task\_figures\_tables\_factor}, \hyperpage{15}
+    \subitem \spxentry{src.final.task\_tables\_coefficient}, \hyperpage{15}
+    \subitem \spxentry{src.model\_code.interactive\_fixed\_effect}, \hyperpage{17}
+    \subitem \spxentry{src.model\_code.statistics}, \hyperpage{18}
+    \subitem \spxentry{src.model\_code.utils}, \hyperpage{18}
+
+  \indexspace
+  \bigletter P
+  \item \spxentry{paste()}\spxextra{in module src.model\_code.utils}, \hyperpage{18}
+  \item \spxentry{paste0()}\spxextra{in module src.model\_code.utils}, \hyperpage{18}
+
+  \indexspace
+  \bigletter R
+  \item \spxentry{reduce\_concat()}\spxextra{in module src.model\_code.utils}, \hyperpage{18}
+
+  \indexspace
+  \bigletter S
+  \item \spxentry{simulation\_coefficient()}\spxextra{in module src.analysis.simulation}, 
+		\hyperpage{13}
+  \item \spxentry{src.analysis.monte\_carlo\_dgp}
+    \subitem \spxentry{module}, \hyperpage{8}
+  \item \spxentry{src.analysis.simulation}
+    \subitem \spxentry{module}, \hyperpage{13}
+  \item \spxentry{src.analysis.task\_simulation\_coefficient}
+    \subitem \spxentry{module}, \hyperpage{14}
+  \item \spxentry{src.analysis.task\_simulation\_factor}
+    \subitem \spxentry{module}, \hyperpage{14}
+  \item \spxentry{src.analysis.task\_statistics\_coefficient}
+    \subitem \spxentry{module}, \hyperpage{14}
+  \item \spxentry{src.data\_management.task\_get\_cigar\_data}
+    \subitem \spxentry{module}, \hyperpage{5}
+  \item \spxentry{src.final.task\_figures\_coefficient}
+    \subitem \spxentry{module}, \hyperpage{15}
+  \item \spxentry{src.final.task\_figures\_tables\_factor}
+    \subitem \spxentry{module}, \hyperpage{15}
+  \item \spxentry{src.final.task\_tables\_coefficient}
+    \subitem \spxentry{module}, \hyperpage{15}
+  \item \spxentry{src.model\_code.interactive\_fixed\_effect}
+    \subitem \spxentry{module}, \hyperpage{17}
+  \item \spxentry{src.model\_code.statistics}
+    \subitem \spxentry{module}, \hyperpage{18}
+  \item \spxentry{src.model\_code.utils}
+    \subitem \spxentry{module}, \hyperpage{18}
+  \item \spxentry{statistics\_coefficient()}\spxextra{in module src.analysis.simulation}, 
+		\hyperpage{13}
+  \item \spxentry{stretch()}\spxextra{in module src.model\_code.utils}, \hyperpage{18}
+
+  \indexspace
+  \bigletter T
+  \item \spxentry{task\_factor\_estimate\_interactive\_fixed\_effects\_model()}\spxextra{in module src.analysis.task\_simulation\_factor}, 
+		\hyperpage{14}
+  \item \spxentry{task\_factor\_estimate\_random\_iid\_residual()}\spxextra{in module src.analysis.task\_simulation\_factor}, 
+		\hyperpage{14}
+  \item \spxentry{task\_simulation\_and\_statistics\_range\_r()}\spxextra{in module src.analysis.task\_simulation\_factor}, 
+		\hyperpage{14}
+
+\end{sphinxtheindex}

@@ -1,0 +1,4 @@
+\beamer@sectionintoc {1}{Introduction}{2}{0}{1}
+\beamer@sectionintoc {2}{Pooled Estimator}{4}{0}{2}
+\beamer@sectionintoc {3}{Fixed Effects Models}{8}{0}{3}
+\beamer@sectionintoc {4}{Monte Carlo Simulations}{19}{0}{4}

@@ -1,0 +1,354 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>src.analysis.simulation &#8212; Panel Data Models with Fixed Effects  documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>Panel Data Models with Fixed Effects  documentation</span></a></h1>
+        <h2 class="heading"><span>src.analysis.simulation</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <h1>Source code for src.analysis.simulation</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">linearmodels.panel</span> <span class="kn">import</span> <span class="n">PanelOLS</span>
+<span class="kn">from</span> <span class="nn">linearmodels.panel</span> <span class="kn">import</span> <span class="n">PooledOLS</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
+
+<span class="kn">from</span> <span class="nn">src.model_code.interactive_fixed_effect</span> <span class="kn">import</span> <span class="n">InteractiveFixedEffect</span>
+<span class="kn">from</span> <span class="nn">src.model_code.statistics</span> <span class="kn">import</span> <span class="n">caculate_rmse</span>
+<span class="kn">from</span> <span class="nn">src.model_code.utils</span> <span class="kn">import</span> <span class="n">paste</span>
+
+
+<div class="viewcode-block" id="simulation_coefficient"><a class="viewcode-back" href="../../../analysis.html#src.analysis.simulation.simulation_coefficient">[docs]</a><span class="k">def</span> <span class="nf">simulation_coefficient</span><span class="p">(</span>
+    <span class="n">dgp_func</span><span class="p">,</span>
+    <span class="n">all_N</span><span class="p">,</span>
+    <span class="n">all_T</span><span class="p">,</span>
+    <span class="n">nsims</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">need_sde</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">tolerance</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span>
+    <span class="n">r</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">interactive_start_value_effect</span><span class="o">=</span><span class="s2">&quot;pooling&quot;</span><span class="p">,</span>
+    <span class="n">within_effect</span><span class="o">=</span><span class="s2">&quot;twoways&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">beta_true</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Monte carlo simulation to estimate beta hat and standard error of coefficient.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dgp_func : function</span>
+<span class="sd">        One function in monte_carlo_dgp</span>
+<span class="sd">    all_N : array-like</span>
+<span class="sd">        Different sample sizes of entity</span>
+<span class="sd">    all_T : array-like</span>
+<span class="sd">        Different sample sizes of time</span>
+<span class="sd">    nsims : int</span>
+<span class="sd">        Simulation times under the same N and T</span>
+<span class="sd">    need_sde : bool</span>
+<span class="sd">        Flag the sde caculation conditions</span>
+<span class="sd">    tolerance : float, optional</span>
+<span class="sd">        Iteration precision.</span>
+<span class="sd">    r : int, optional</span>
+<span class="sd">        Number of factors.</span>
+<span class="sd">    interactive_start_value_effect : string, optional</span>
+<span class="sd">        The effects used in package linearmodels for starting value, one of &quot;pooling&quot;,</span>
+<span class="sd">        &quot;twoways&quot;</span>
+<span class="sd">    within_effect : string, optional</span>
+<span class="sd">        The effects used in package linearmodels for within estimator, one of &quot;twoways&quot;,</span>
+<span class="sd">        &quot;individual&quot;</span>
+<span class="sd">    beta_true : float</span>
+<span class="sd">        Coefficient of variables used in dgp_func. Values in (&quot;beta1&quot;, &quot;beta2&quot;, &quot;mu&quot;,</span>
+<span class="sd">        &quot;gamma&quot;, &quot;delta&quot;)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    df_sim_result : DataFrame</span>
+<span class="sd">        Columns are T, N, sim, beta_interactive, beta_within, sde_interactive,</span>
+<span class="sd">        sde_within</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_N</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_T</span><span class="p">),</span> <span class="s2">&quot;all_N and all_T must has same length&quot;</span>
+    <span class="k">assert</span> <span class="n">interactive_start_value_effect</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;pooling&quot;</span><span class="p">,</span> <span class="s2">&quot;twoways&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">within_effect</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;twoways&quot;</span><span class="p">,</span> <span class="s2">&quot;individual&quot;</span><span class="p">)</span>
+    <span class="n">beta_true</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">k</span><span class="p">:</span> <span class="n">beta_true</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;beta1&quot;</span><span class="p">,</span> <span class="s2">&quot;beta2&quot;</span><span class="p">,</span> <span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;gamma&quot;</span><span class="p">,</span> <span class="s2">&quot;delta&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">beta_true</span>
+    <span class="p">}</span>  <span class="c1"># select only coefficient from beta_true</span>
+    <span class="n">dgp_func</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">dgp_func</span><span class="p">,</span> <span class="o">**</span><span class="n">beta_true</span><span class="p">)</span>  <span class="c1"># set default arguments</span>
+    <span class="c1"># Generate data frame of param.</span>
+    <span class="c1"># It is Cartesian product of all_N and all_T and c(1:nsims).</span>
+    <span class="n">T_N_sim</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">all_T</span><span class="p">,</span> <span class="n">nsims</span><span class="p">),</span>
+            <span class="s2">&quot;N&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">all_N</span><span class="p">,</span> <span class="n">nsims</span><span class="p">),</span>
+            <span class="s2">&quot;sim&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nsims</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_N</span><span class="p">)),</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">sim_one_case_partial</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+        <span class="n">_sim_one_case</span><span class="p">,</span>
+        <span class="n">T_N_sim</span><span class="o">=</span><span class="n">T_N_sim</span><span class="p">,</span>
+        <span class="n">dgp_func</span><span class="o">=</span><span class="n">dgp_func</span><span class="p">,</span>
+        <span class="n">need_sde</span><span class="o">=</span><span class="n">need_sde</span><span class="p">,</span>
+        <span class="n">tolerance</span><span class="o">=</span><span class="n">tolerance</span><span class="p">,</span>
+        <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span>
+        <span class="n">interactive_start_value_effect</span><span class="o">=</span><span class="n">interactive_start_value_effect</span><span class="p">,</span>
+        <span class="n">within_effect</span><span class="o">=</span><span class="n">within_effect</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">cores</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">cores</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">sim_one_case_partial</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">T_N_sim</span><span class="p">)))</span>
+    <span class="n">df_sim_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">df_sim_result</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_sim_result</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+    <span class="n">df_sim_result</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_sim_result</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+    <span class="n">df_sim_result</span><span class="p">[</span><span class="s2">&quot;sim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_sim_result</span><span class="p">[</span><span class="s2">&quot;sim&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df_sim_result</span></div>
+
+
+<span class="k">def</span> <span class="nf">_sim_one_case</span><span class="p">(</span>
+    <span class="n">case</span><span class="p">,</span>
+    <span class="n">T_N_sim</span><span class="p">,</span>
+    <span class="n">dgp_func</span><span class="p">,</span>
+    <span class="n">need_sde</span><span class="p">,</span>
+    <span class="n">tolerance</span><span class="p">,</span>
+    <span class="n">r</span><span class="p">,</span>
+    <span class="n">interactive_start_value_effect</span><span class="p">,</span>
+    <span class="n">within_effect</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="c1"># gerate simulation data</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">panel_df</span> <span class="o">=</span> <span class="n">dgp_func</span><span class="p">(</span><span class="n">T_N_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">case</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">],</span> <span class="n">T_N_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">case</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">])</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># within model require no collinear variable combinations</span>
+    <span class="n">no_collinear_x_var</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="mi">3</span><span class="p">))]</span>
+    <span class="c1"># run estimator for starting value for interactive estimator</span>
+    <span class="k">if</span> <span class="n">interactive_start_value_effect</span> <span class="o">==</span> <span class="s2">&quot;twoways&quot;</span><span class="p">:</span>
+        <span class="n">start_value_estimator</span> <span class="o">=</span> <span class="n">PanelOLS</span><span class="p">(</span>
+            <span class="n">panel_df</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+            <span class="n">panel_df</span><span class="p">[</span><span class="n">no_collinear_x_var</span><span class="p">],</span>
+            <span class="n">entity_effects</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">time_effects</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">start_value_estimator</span> <span class="o">=</span> <span class="n">PooledOLS</span><span class="p">(</span>
+            <span class="n">panel_df</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">panel_df</span><span class="p">[[</span><span class="s2">&quot;x&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]]</span>
+        <span class="p">)</span>
+    <span class="n">start_value_result</span> <span class="o">=</span> <span class="n">start_value_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+    <span class="n">interactive_start_value</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="o">*</span><span class="n">start_value_result</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">start_value_result</span><span class="o">.</span><span class="n">params</span><span class="p">)),</span>
+    <span class="p">]</span>
+    <span class="c1"># run interactive fixed effect estimator</span>
+    <span class="n">interactive_estimator</span> <span class="o">=</span> <span class="n">InteractiveFixedEffect</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+    <span class="p">(</span>
+        <span class="n">beta_hat_interactive</span><span class="p">,</span>
+        <span class="n">beta_hat_list</span><span class="p">,</span>
+        <span class="n">f_hat</span><span class="p">,</span>
+        <span class="n">lambda_hat</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">interactive_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">interactive_start_value</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">)</span>
+    <span class="c1"># run within estimator with the same data</span>
+    <span class="k">if</span> <span class="n">within_effect</span> <span class="o">==</span> <span class="n">interactive_start_value_effect</span><span class="p">:</span>
+        <span class="n">within_result</span> <span class="o">=</span> <span class="n">start_value_result</span>
+    <span class="k">elif</span> <span class="n">within_effect</span> <span class="o">==</span> <span class="s2">&quot;individual&quot;</span><span class="p">:</span>
+        <span class="n">within_estimator</span> <span class="o">=</span> <span class="n">PanelOLS</span><span class="p">(</span>
+            <span class="n">panel_df</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">panel_df</span><span class="p">[</span><span class="n">no_collinear_x_var</span><span class="p">],</span> <span class="n">entity_effects</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="n">within_result</span> <span class="o">=</span> <span class="n">within_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">within_estimator</span> <span class="o">=</span> <span class="n">PanelOLS</span><span class="p">(</span>
+            <span class="n">panel_df</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+            <span class="n">panel_df</span><span class="p">[</span><span class="n">no_collinear_x_var</span><span class="p">],</span>
+            <span class="n">entity_effects</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">time_effects</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">within_result</span> <span class="o">=</span> <span class="n">within_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+    <span class="n">beta_hat_within</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="o">*</span><span class="n">within_result</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">within_result</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="n">sde_within</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="o">*</span><span class="n">within_result</span><span class="o">.</span><span class="n">std_errors</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">within_result</span><span class="o">.</span><span class="n">std_errors</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="c1"># if need to caculate sde</span>
+    <span class="k">if</span> <span class="n">need_sde</span><span class="p">:</span>
+        <span class="n">sde_interactive</span> <span class="o">=</span> <span class="n">interactive_estimator</span><span class="o">.</span><span class="n">calculate_sde</span><span class="p">(</span>
+            <span class="n">beta_hat_interactive</span><span class="p">,</span> <span class="n">f_hat</span><span class="p">,</span> <span class="n">lambda_hat</span>
+        <span class="p">)</span>
+        <span class="n">sde_interactive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">sde_interactive</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sde_interactive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">one_sim_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="o">*</span><span class="n">T_N_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">case</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;sim&quot;</span><span class="p">]],</span>
+            <span class="o">*</span><span class="n">beta_hat_interactive</span><span class="p">,</span>
+            <span class="o">*</span><span class="n">beta_hat_within</span><span class="p">,</span>
+            <span class="o">*</span><span class="n">sde_interactive</span><span class="p">,</span>
+            <span class="o">*</span><span class="n">sde_within</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="n">index</span><span class="o">=</span><span class="p">[</span>
+            <span class="s2">&quot;T&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;N&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sim&quot;</span><span class="p">,</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;beta_interactive&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;beta_within&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;sde_interactive&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;sde_within&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">one_sim_result</span>
+
+
+<div class="viewcode-block" id="statistics_coefficient"><a class="viewcode-back" href="../../../analysis.html#src.analysis.simulation.statistics_coefficient">[docs]</a><span class="k">def</span> <span class="nf">statistics_coefficient</span><span class="p">(</span><span class="n">all_N</span><span class="p">,</span> <span class="n">all_T</span><span class="p">,</span> <span class="n">nsims</span><span class="p">,</span> <span class="n">df_sim_result</span><span class="p">,</span> <span class="o">**</span><span class="n">beta_true</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate statistics of each N &amp; T, take the mean of different simulations, and</span>
+<span class="sd">    store them in a data frame. We include mean, bias, the RMSE, standard error and</span>
+<span class="sd">    cofidence interval in our statistical results.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    all_N : array-like</span>
+<span class="sd">        Different sample sizes of entity</span>
+<span class="sd">    all_T : array-like</span>
+<span class="sd">        Different sample sizes of time</span>
+<span class="sd">    nsims : int</span>
+<span class="sd">        Simulation times under the same N and T</span>
+<span class="sd">    df_sim_result : DataFrame</span>
+<span class="sd">        Simulation results from function `simulation_coefficient`</span>
+<span class="sd">    beta_true : float</span>
+<span class="sd">        Coefficients of variables used in dgp_func. Values in (&quot;beta1&quot;, &quot;beta2&quot;, &quot;mu&quot;,</span>
+<span class="sd">        &quot;gamma&quot;, &quot;delta&quot;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># vectorize startswith() to apply it in a string list</span>
+    <span class="n">startswith_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">)</span>
+    <span class="c1"># guess number of variables from column names</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">startswith_vec</span><span class="p">(</span><span class="n">df_sim_result</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="s2">&quot;beta_interactive.&quot;</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">beta_true</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">p</span><span class="p">,</span> <span class="s2">&quot;short of beta_true&quot;</span>
+    <span class="n">beta_true_list</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">beta_true</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;beta1&quot;</span><span class="p">,</span> <span class="s2">&quot;beta2&quot;</span><span class="p">,</span> <span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;gamma&quot;</span><span class="p">,</span> <span class="s2">&quot;delta&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">beta_true</span>
+    <span class="p">][:</span><span class="n">p</span><span class="p">]</span>
+    <span class="n">df_statistic</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_N</span><span class="p">)),</span>
+        <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+            <span class="s2">&quot;T&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;N&quot;</span><span class="p">,</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;mean_interactive&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;bias_interactive&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;sde_interactive&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;ci_l_interactive&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;ci_u_interactive&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;rmse_interactive&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;mean_within&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;bias_within&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;sde_within&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;ci_l_within&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;ci_u_within&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">paste</span><span class="p">(</span><span class="s2">&quot;rmse_within&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># three quick function to get and modify df_statistic and df_sim_result</span>
+
+    <span class="k">def</span> <span class="nf">get_stat</span><span class="p">(</span><span class="n">col</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">df_statistic</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">startswith_vec</span><span class="p">(</span><span class="n">df_statistic</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">col</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">get_sim</span><span class="p">(</span><span class="n">col</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">df_sim_result</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
+            <span class="n">row_range_df_sim</span><span class="p">,</span> <span class="n">startswith_vec</span><span class="p">(</span><span class="n">df_sim_result</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">set_stat</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">df_statistic</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">startswith_vec</span><span class="p">(</span><span class="n">df_statistic</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">col</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_N</span><span class="p">)):</span>
+        <span class="n">df_statistic</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_N</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">df_statistic</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_T</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">row_range_df_sim</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="n">nsims</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nsims</span><span class="p">)</span>
+        <span class="n">set_stat</span><span class="p">(</span><span class="s2">&quot;mean_interactive&quot;</span><span class="p">,</span> <span class="n">get_sim</span><span class="p">(</span><span class="s2">&quot;beta_interactive&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+        <span class="n">set_stat</span><span class="p">(</span><span class="s2">&quot;mean_within&quot;</span><span class="p">,</span> <span class="n">get_sim</span><span class="p">(</span><span class="s2">&quot;beta_within&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+        <span class="n">set_stat</span><span class="p">(</span>
+            <span class="s2">&quot;bias_interactive&quot;</span><span class="p">,</span>
+            <span class="n">get_stat</span><span class="p">(</span><span class="s2">&quot;mean_interactive&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">beta_true_list</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">beta_true_list</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">set_stat</span><span class="p">(</span>
+            <span class="s2">&quot;bias_within&quot;</span><span class="p">,</span>
+            <span class="n">get_stat</span><span class="p">(</span><span class="s2">&quot;mean_within&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">beta_true_list</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">beta_true_list</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">get_sim</span><span class="p">(</span><span class="s2">&quot;sde_interactive&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skipna</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">set_stat</span><span class="p">(</span><span class="s2">&quot;sde_interactive&quot;</span><span class="p">,</span> <span class="n">get_sim</span><span class="p">(</span><span class="s2">&quot;sde_interactive&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+            <span class="n">set_stat</span><span class="p">(</span>
+                <span class="s2">&quot;ci_l_interactive&quot;</span><span class="p">,</span>
+                <span class="n">get_stat</span><span class="p">(</span><span class="s2">&quot;mean_interactive&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+                    <span class="n">get_stat</span><span class="p">(</span><span class="s2">&quot;sde_interactive&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.975</span><span class="p">))</span><span class="o">.</span><span class="n">values</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">set_stat</span><span class="p">(</span>
+                <span class="s2">&quot;ci_u_interactive&quot;</span><span class="p">,</span>
+                <span class="n">get_stat</span><span class="p">(</span><span class="s2">&quot;mean_interactive&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+                    <span class="n">get_stat</span><span class="p">(</span><span class="s2">&quot;sde_interactive&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.975</span><span class="p">))</span><span class="o">.</span><span class="n">values</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="n">set_stat</span><span class="p">(</span><span class="s2">&quot;sde_within&quot;</span><span class="p">,</span> <span class="n">get_sim</span><span class="p">(</span><span class="s2">&quot;sde_within&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+        <span class="n">set_stat</span><span class="p">(</span>
+            <span class="s2">&quot;ci_l_within&quot;</span><span class="p">,</span>
+            <span class="n">get_stat</span><span class="p">(</span><span class="s2">&quot;mean_within&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+                <span class="n">get_stat</span><span class="p">(</span><span class="s2">&quot;sde_within&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.975</span><span class="p">))</span><span class="o">.</span><span class="n">values</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">set_stat</span><span class="p">(</span>
+            <span class="s2">&quot;ci_u_within&quot;</span><span class="p">,</span>
+            <span class="n">get_stat</span><span class="p">(</span><span class="s2">&quot;mean_within&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+                <span class="n">get_stat</span><span class="p">(</span><span class="s2">&quot;sde_within&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.975</span><span class="p">))</span><span class="o">.</span><span class="n">values</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">set_stat</span><span class="p">(</span>
+            <span class="s2">&quot;rmse_interactive&quot;</span><span class="p">,</span>
+            <span class="n">caculate_rmse</span><span class="p">(</span><span class="n">get_sim</span><span class="p">(</span><span class="s2">&quot;beta_interactive&quot;</span><span class="p">),</span> <span class="n">beta_true_list</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">set_stat</span><span class="p">(</span><span class="s2">&quot;rmse_within&quot;</span><span class="p">,</span> <span class="n">caculate_rmse</span><span class="p">(</span><span class="n">get_sim</span><span class="p">(</span><span class="s2">&quot;beta_within&quot;</span><span class="p">),</span> <span class="n">beta_true_list</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">df_statistic</span></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-March, Yuxin Wang.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Model code &#8212; Panel Data Models with Fixed Effects  documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Model specifications" href="model_specs.html" />
+    <link rel="prev" title="Visualisation and results formatting" href="final.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>Panel Data Models with Fixed Effects  documentation</span></a></h1>
+        <h2 class="heading"><span>Model code</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="final.html">Visualisation and results formatting</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="model_specs.html">Model specifications</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <div class="section" id="model-code">
+<span id="id1"></span><h1>Model code<a class="headerlink" href="#model-code" title="Permalink to this headline">¶</a></h1>
+<p>This directory <em>src.model_code</em> contains interactive fixed effects model estimator and
+factor number estimator, and some statistical and utility funcitons.</p>
+<div class="section" id="module-src.model_code.interactive_fixed_effect">
+<span id="the-interactivefixedeffect-class"></span><h2>The <code class="docutils literal notranslate"><span class="pre">InteractiveFixedEffect</span></code> class<a class="headerlink" href="#module-src.model_code.interactive_fixed_effect" title="Permalink to this headline">¶</a></h2>
+<p>Calculate the interactive fixed effect estimator as described in Bai(2009). The
+corresponding theory is in Chapter 3 of our report.</p>
+<dl class="py class">
+<dt id="src.model_code.interactive_fixed_effect.InteractiveFixedEffect">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">InteractiveFixedEffect</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dependent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exog</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_code/interactive_fixed_effect.html#InteractiveFixedEffect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_code.interactive_fixed_effect.InteractiveFixedEffect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interactive fixed effects estimator for panel data</p>
+<dl class="simple">
+<dt>dependent<span class="classifier">array-like</span></dt><dd><p>Dependent (left-hand-side) variable (time by entity).</p>
+</dd>
+<dt>exog<span class="classifier">array-like</span></dt><dd><p>Exogenous or right-hand-side variables (variable by time by entity).</p>
+</dd>
+</dl>
+<div class="math notranslate nohighlight">
+\[y_{it} = \beta x_{it} + \lambda_{i}'F_{t} + \epsilon_{it}\]</div>
+<dl class="py method">
+<dt id="src.model_code.interactive_fixed_effect.InteractiveFixedEffect.calculate_sde">
+<code class="sig-name descname"><span class="pre">calculate_sde</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beta_hat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_hat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambda_hat</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_code/interactive_fixed_effect.html#InteractiveFixedEffect.calculate_sde"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_code.interactive_fixed_effect.InteractiveFixedEffect.calculate_sde" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate standard error of beta_hat estimated from fit</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.model_code.interactive_fixed_effect.InteractiveFixedEffect.fit">
+<code class="sig-name descname"><span class="pre">fit</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta_hat_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_code/interactive_fixed_effect.html#InteractiveFixedEffect.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_code.interactive_fixed_effect.InteractiveFixedEffect.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate parameters of different model</p>
+<dl class="simple">
+<dt>r<span class="classifier">int</span></dt><dd><p>Number of factors.</p>
+</dd>
+<dt>beta_hat_0: array-like, optional</dt><dd><p>Starting values of estimator. Should be same order as exog variable.</p>
+</dd>
+<dt>tolerance<span class="classifier">float, optional</span></dt><dd><p>Iteration precision.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>beta_hat<span class="classifier">array-like</span></dt><dd><p>Estimate the result of slope coefficients. Same order as exog variable.</p>
+</dd>
+<dt>beta_hat_list<span class="classifier">array-like</span></dt><dd><p>Iteration intermediate values.</p>
+</dd>
+<dt>f_hat<span class="classifier">array-like</span></dt><dd><p>Estimate the result of time fixed effects.</p>
+</dd>
+<dt>lambda_hat<span class="classifier">array-like</span></dt><dd><p>Estimate the result of individual fixed effects.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.model_code.statistics">
+<span id="the-statistics-module"></span><h2>The <code class="docutils literal notranslate"><span class="pre">Statistics</span></code> module<a class="headerlink" href="#module-src.model_code.statistics" title="Permalink to this headline">¶</a></h2>
+<p>Some pure functions to caculate statistical results</p>
+<dl class="py function">
+<dt id="src.model_code.statistics.caculate_rmse">
+<code class="sig-name descname"><span class="pre">caculate_rmse</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimated</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">real</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_code/statistics.html#caculate_rmse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_code.statistics.caculate_rmse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caculate the root-mean-square-error</p>
+<dl class="simple">
+<dt>estimated<span class="classifier">array-like</span></dt><dd><p>Estimated value</p>
+</dd>
+<dt>real<span class="classifier">array-like</span></dt><dd><p>Real value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.model_code.statistics.caculate_sde">
+<code class="sig-name descname"><span class="pre">caculate_sde</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimated</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_code/statistics.html#caculate_sde"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_code.statistics.caculate_sde" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caculate standard error</p>
+<dl class="simple">
+<dt>estimated<span class="classifier">array-like</span></dt><dd><p>Estimated value</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.model_code.utils">
+<span id="the-utils-module"></span><h2>The <code class="docutils literal notranslate"><span class="pre">utils</span></code> module<a class="headerlink" href="#module-src.model_code.utils" title="Permalink to this headline">¶</a></h2>
+<p>Some pure functions used frequently.</p>
+<dl class="py function">
+<dt id="src.model_code.utils.paste">
+<code class="sig-name descname"><span class="pre">paste</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">lists</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'</span> <span class="pre">'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_code/utils.html#paste"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_code.utils.paste" title="Permalink to this definition">¶</a></dt>
+<dd><p>Concatenate vectors after converting to character.
+Implement the function <cite>Paste</cite> in R.</p>
+<dl class="simple">
+<dt>lists<span class="classifier">array-like</span></dt><dd><p>One or more objects, to be converted into character vectors.</p>
+</dd>
+<dt>sep<span class="classifier">string</span></dt><dd><p>A character string used to separate the terms</p>
+</dd>
+<dt>collapse<span class="classifier">string</span></dt><dd><p>An optional character string used to separate the results</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.model_code.utils.paste0">
+<code class="sig-name descname"><span class="pre">paste0</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">lists</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_code/utils.html#paste0"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_code.utils.paste0" title="Permalink to this definition">¶</a></dt>
+<dd><p>paste0(…, collapse) is similar to paste(…, sep = “”, collapse), but the former
+one is slightly more efficient.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.model_code.utils.reduce_concat">
+<code class="sig-name descname"><span class="pre">reduce_concat</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_code/utils.html#reduce_concat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_code.utils.reduce_concat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Join a list into one string.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.model_code.utils.stretch">
+<code class="sig-name descname"><span class="pre">stretch</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lists</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_code/utils.html#stretch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_code.utils.stretch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stretch lists to same length.
+Shorter lists is repeated to reach the same length as the longest.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="final.html">Visualisation and results formatting</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="model_specs.html">Model specifications</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-March, Yuxin Wang.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.3.
+    </div>
+  </body>
+</html>

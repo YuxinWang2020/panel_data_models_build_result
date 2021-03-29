@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>src.model_code.utils &#8212; Panel Data Models with Fixed Effects  documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>Panel Data Models with Fixed Effects  documentation</span></a></h1>
+        <h2 class="heading"><span>src.model_code.utils</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <h1>Source code for src.model_code.utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Some pure functions used frequently.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+
+
+<span class="k">def</span> <span class="nf">iterable</span><span class="p">(</span><span class="n">o</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">list_str</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">]</span> <span class="k">if</span> <span class="n">iterable</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_find_max_list</span><span class="p">(</span><span class="n">lists</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="k">for</span> <span class="n">lst</span> <span class="ow">in</span> <span class="n">lists</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="stretch"><a class="viewcode-back" href="../../../model_code.html#src.model_code.utils.stretch">[docs]</a><span class="k">def</span> <span class="nf">stretch</span><span class="p">(</span><span class="n">lists</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stretch lists to same length.</span>
+<span class="sd">    Shorter lists is repeated to reach the same length as the longest.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lists</span> <span class="o">=</span> <span class="p">[</span><span class="n">lst</span> <span class="k">if</span> <span class="n">iterable</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">lst</span><span class="p">]</span> <span class="k">for</span> <span class="n">lst</span> <span class="ow">in</span> <span class="n">lists</span><span class="p">]</span>
+    <span class="n">max_len</span> <span class="o">=</span> <span class="n">_find_max_list</span><span class="p">(</span><span class="n">lists</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[(</span><span class="nb">list</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">*</span> <span class="p">((</span><span class="n">max_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))[:</span><span class="n">max_len</span><span class="p">]</span> <span class="k">for</span> <span class="n">lst</span> <span class="ow">in</span> <span class="n">lists</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="reduce_concat"><a class="viewcode-back" href="../../../model_code.html#src.model_code.utils.reduce_concat">[docs]</a><span class="k">def</span> <span class="nf">reduce_concat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Join a list into one string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">sep</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="paste"><a class="viewcode-back" href="../../../model_code.html#src.model_code.utils.paste">[docs]</a><span class="k">def</span> <span class="nf">paste</span><span class="p">(</span><span class="o">*</span><span class="n">lists</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">collapse</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Concatenate vectors after converting to character.</span>
+<span class="sd">    Implement the function `Paste` in R.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lists : array-like</span>
+<span class="sd">        One or more objects, to be converted into character vectors.</span>
+<span class="sd">    sep : string</span>
+<span class="sd">        A character string used to separate the terms</span>
+<span class="sd">    collapse : string</span>
+<span class="sd">        An optional character string used to separate the results</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lists</span> <span class="o">=</span> <span class="n">stretch</span><span class="p">(</span><span class="n">lists</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">reduce_concat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">),</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">lists</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">collapse</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">reduce_concat</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">collapse</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="paste0"><a class="viewcode-back" href="../../../model_code.html#src.model_code.utils.paste0">[docs]</a><span class="k">def</span> <span class="nf">paste0</span><span class="p">(</span><span class="o">*</span><span class="n">lists</span><span class="p">,</span> <span class="n">collapse</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    paste0(..., collapse) is similar to paste(..., sep = &quot;&quot;, collapse), but the former</span>
+<span class="sd">    one is slightly more efficient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">paste</span><span class="p">(</span><span class="o">*</span><span class="n">lists</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">collapse</span><span class="o">=</span><span class="n">collapse</span><span class="p">)</span></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-March, Yuxin Wang.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.3.
+    </div>
+  </body>
+</html>

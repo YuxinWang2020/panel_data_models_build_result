@@ -1,0 +1,522 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monte Carlo Simulations and Real Data Application &#8212; Panel Data Models with Fixed Effects  documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Visualisation and results formatting" href="final.html" />
+    <link rel="prev" title="Data management" href="data_management.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>Panel Data Models with Fixed Effects  documentation</span></a></h1>
+        <h2 class="heading"><span>Monte Carlo Simulations and Real Data Application</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="data_management.html">Data management</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="final.html">Visualisation and results formatting</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <div class="section" id="monte-carlo-simulations-and-real-data-application">
+<span id="id1"></span><h1>Monte Carlo Simulations and Real Data Application<a class="headerlink" href="#monte-carlo-simulations-and-real-data-application" title="Permalink to this headline">¶</a></h1>
+<p>Documentation of the code in <em>src.analysis</em>. This is the core of the project.</p>
+<p>The analysis in this project contains three aspects:</p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt>Estimation of slope coefficients</dt><dd><ol class="arabic simple">
+<li><p>Monte carlo simulations under IID assumptions</p></li>
+<li><p>Monte carlo simulations under ARI time fixed effects</p></li>
+<li><p>Starting Values in the additive fixed effects model</p></li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Estimation of the number of factors</dt><dd><ol class="arabic simple">
+<li><p>Estimate parameters in interactive fixed effects model by using different numbers of factors</p></li>
+<li><p>Estimate factor numbers in interactive fixed effects model by choosing different penalty functions and criterias</p></li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Real data application</dt><dd><ol class="arabic simple">
+<li><p>Use a panel data set of 46 observations from 1963 to 1992</p></li>
+<li><p>Estimate the coefficients and factor numbers by using the model in Baltagi and Levin (1992)</p></li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+<p>Process of Monte Carlo simulations:</p>
+<ol class="arabic simple">
+<li><p>Data generating processes for monte carlo simulations</p></li>
+<li><p>Estimate model parameters by interactive-effects estimator and within estimator</p></li>
+<li><p>Caculate statistical results for coefficients, including mean, bias, root-mean-square error, standard error and confidence interval</p></li>
+</ol>
+<p>Function <cite>simulation_coefficient</cite> in module <cite>src.analysis.simulation</cite> is defined for running the simulations under different number of individuals and time periods over 1000 repetitions.</p>
+<div class="section" id="module-src.analysis.monte_carlo_dgp">
+<span id="data-generating-process-for-monte-carlo-simulation"></span><h2>Data Generating process for Monte Carlo Simulation<a class="headerlink" href="#module-src.analysis.monte_carlo_dgp" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="src.analysis.monte_carlo_dgp.dgp_additive_fixed_effects_model">
+<code class="sig-name descname"><span class="pre">dgp_additive_fixed_effects_model</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/monte_carlo_dgp.html#dgp_additive_fixed_effects_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.monte_carlo_dgp.dgp_additive_fixed_effects_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Data generating process for “Interactive Fixed Effects Model with Common
+Regressors and Time-invariant Regressors”</p>
+<dl class="simple">
+<dt>T<span class="classifier">int</span></dt><dd><p>Sample size of time</p>
+</dd>
+<dt>N<span class="classifier">int</span></dt><dd><p>Sample size of entity</p>
+</dd>
+<dt>beta1<span class="classifier">float</span></dt><dd><p>Coefficient of x1</p>
+</dd>
+<dt>beta2<span class="classifier">float</span></dt><dd><p>Coefficient of x2</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>X<span class="classifier">array-like</span></dt><dd><p>Simulate data of exogenous or right-hand-side variables (variable by time by
+entity).</p>
+</dd>
+<dt>Y<span class="classifier">array-like</span></dt><dd><p>Simulate data of dependent (left-hand-side) variable (time by entity).</p>
+</dd>
+</dl>
+<div class="math notranslate nohighlight">
+\[y_{it} = \beta_{1}x_{it,1}+\beta_{2}x_{it,2}+\alpha_{i}+\xi_{t}+\epsilon_{it}\]</div>
+<p>Two fixed effects satisfy</p>
+<div class="math notranslate nohighlight">
+\[\alpha_{i}, \xi_{t}\stackrel{\text{i.i.d}}{\sim}N(0,1).\]</div>
+<p>Both of two fixed effects are correlated with the two regressors</p>
+<div class="math notranslate nohighlight">
+\[X_{it,j}=3+2\alpha_i+2\xi_t+\eta_{it,j},\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\eta_{it,j}\stackrel{\text{i.i.d}}{\sim} N(0,1) \qquad j\in \{1,2\}.\]</div>
+<p>The error term satisfies</p>
+<div class="math notranslate nohighlight">
+\[\epsilon_{it} \stackrel{\text{i.i.d}}{\sim}N(0,4).\]</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.analysis.monte_carlo_dgp.dgp_additive_fixed_effects_model_no_iid">
+<code class="sig-name descname"><span class="pre">dgp_additive_fixed_effects_model_no_iid</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/monte_carlo_dgp.html#dgp_additive_fixed_effects_model_no_iid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.monte_carlo_dgp.dgp_additive_fixed_effects_model_no_iid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Monte carlo data generate processor for “Interactive Fixed Effects Model with Common
+Regressors and Time-invariant Regressors”</p>
+<dl class="simple">
+<dt>T<span class="classifier">int</span></dt><dd><p>Sample size of time</p>
+</dd>
+<dt>N<span class="classifier">int</span></dt><dd><p>Sample size of entity</p>
+</dd>
+<dt>beta1<span class="classifier">float</span></dt><dd><p>Coefficient of x1</p>
+</dd>
+<dt>beta2<span class="classifier">float</span></dt><dd><p>Coefficient of x2</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>X<span class="classifier">array-like</span></dt><dd><p>Simulate data of Exogenous or right-hand-side variables (variable by time by
+entity).</p>
+</dd>
+<dt>Y<span class="classifier">array-like</span></dt><dd><p>Simulate data of Dependent (left-hand-side) variable (time by entity).</p>
+</dd>
+</dl>
+<div class="math notranslate nohighlight">
+\[y_{it} = \beta_{1}x_{it,1}+\beta_{2}x_{it,2}+\alpha_{i}+\xi_{t}+\epsilon_{it}\]</div>
+<p>Two fixed effects satisfy</p>
+<div class="math notranslate nohighlight">
+\[\alpha_{i} \stackrel{\text{i.i.d}}{\sim}N(0,1).
+\xi_{t}=0.7 \cdot \xi_{t-1}+ u_{t},\]</div>
+<p>with:</p>
+<div class="math notranslate nohighlight">
+\[u_{t}\stackrel{\text{i.i.d}}{\sim} N(0,1) \qquad j\in \{1,2\}.\]</div>
+<p>Both of two fixed effects are correlated with the two regressors</p>
+<div class="math notranslate nohighlight">
+\[X_{it,j}=3+2\alpha_i+2\xi_t+\eta_{it,j},\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\eta_{it,j}\stackrel{\text{i.i.d}}{\sim} N(0,1) \qquad j\in \{1,2\}.\]</div>
+<p>The error term satisfies</p>
+<div class="math notranslate nohighlight">
+\[\epsilon_{it} \stackrel{\text{i.i.d}}{\sim}N(0,4).\]</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.analysis.monte_carlo_dgp.dgp_interactive_fixed_effects_model">
+<code class="sig-name descname"><span class="pre">dgp_interactive_fixed_effects_model</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/monte_carlo_dgp.html#dgp_interactive_fixed_effects_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.monte_carlo_dgp.dgp_interactive_fixed_effects_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Data generating process for “Interactive Fixed Effects Model”</p>
+<dl class="simple">
+<dt>T<span class="classifier">int</span></dt><dd><p>Sample size of time</p>
+</dd>
+<dt>N<span class="classifier">int</span></dt><dd><p>Sample size of entity</p>
+</dd>
+<dt>beta1<span class="classifier">float</span></dt><dd><p>Coefficient of x1</p>
+</dd>
+<dt>beta2<span class="classifier">float</span></dt><dd><p>Coefficient of x2</p>
+</dd>
+<dt>mu<span class="classifier">float</span></dt><dd><p>Constant</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>X<span class="classifier">array-like</span></dt><dd><p>Simulate data of exogenous or right-hand-side variables (variable by time by
+entity).</p>
+</dd>
+<dt>Y<span class="classifier">array-like</span></dt><dd><p>Simulate data of dependent (left-hand-side) variable (time by entity).</p>
+</dd>
+</dl>
+<div class="math notranslate nohighlight">
+\[y_{it} = \beta_{1}x_{it,1}+\beta_{2}x_{it,2}+\mu+\lambda_{i}'F_{t}+\epsilon_{it}\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[\lambda_i = \binom{\lambda_{i1}}{\lambda_{i2}} \stackrel{\text{i.i.d}}{\sim}
+N(0,I_2),
+F_t =\binom{F_{t1}}{F_{t2}}\stackrel{\text{i.i.d}}{\sim}  N(0,I_2),\]</div>
+<p>The regressors are generated according to:</p>
+<div class="math notranslate nohighlight">
+\[X_{it,j}= 1+\lambda_{i1}F_{t1}+\lambda_{i2}F_{t2}+\lambda_{i1}+\lambda_{i2}+
+F_{t1}+F_{t2}+\eta_{it,j},\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\eta_{it,j}\stackrel{\text{i.i.d}}{\sim} N(0,1) \qquad j\in \{1,2\}.\]</div>
+<p>The regressors are correlated with <span class="math notranslate nohighlight">\(\lambda_i\)</span>, <span class="math notranslate nohighlight">\(f_t\)</span>, and the product
+<span class="math notranslate nohighlight">\(\lambda_i' F_t\)</span>.
+The error term satisfies</p>
+<div class="math notranslate nohighlight">
+\[\epsilon_{it} \stackrel{\text{i.i.d}}{\sim}N(0,4).\]</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.analysis.monte_carlo_dgp.dgp_interactive_fixed_effects_model_no_iid">
+<code class="sig-name descname"><span class="pre">dgp_interactive_fixed_effects_model_no_iid</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/monte_carlo_dgp.html#dgp_interactive_fixed_effects_model_no_iid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.monte_carlo_dgp.dgp_interactive_fixed_effects_model_no_iid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Monte carlo data generate processor for “Interactive Fixed Effects Model”</p>
+<dl class="simple">
+<dt>T<span class="classifier">int</span></dt><dd><p>Sample size of time</p>
+</dd>
+<dt>N<span class="classifier">int</span></dt><dd><p>Sample size of entity</p>
+</dd>
+<dt>beta1<span class="classifier">float</span></dt><dd><p>Coefficient of x1</p>
+</dd>
+<dt>beta2<span class="classifier">float</span></dt><dd><p>Coefficient of x2</p>
+</dd>
+<dt>mu<span class="classifier">float</span></dt><dd><p>Constant</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>X<span class="classifier">array-like</span></dt><dd><p>Simulate data of Exogenous or right-hand-side variables (variable by time by
+entity).</p>
+</dd>
+<dt>Y<span class="classifier">array-like</span></dt><dd><p>Simulate data of Dependent (left-hand-side) variable (time by entity).</p>
+</dd>
+</dl>
+<div class="math notranslate nohighlight">
+\[y_{it} = \beta_{1}x_{it,1}+\beta_{2}x_{it,2}+\mu+\lambda_{i}'F_{t}+\epsilon_{it}\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[\lambda_i = \binom{\lambda_{i1}}{\lambda_{i2}} \stackrel{\text{i.i.d}}{\sim}
+N(0,I_2),
+F_{t,j}=0.7 \cdot F_{t-1,j}+ u_{t,j},\]</div>
+<p>with:</p>
+<div class="math notranslate nohighlight">
+\[u_{t,j}\stackrel{\text{i.i.d}}{\sim} N(0,1) \qquad j\in \{1,2\}.\]</div>
+<p>The regressors are generated according to:</p>
+<div class="math notranslate nohighlight">
+\[X_{it,j}= 1+\lambda_{i1}F_{t1}+\lambda_{i2}F_{t2}+\lambda_{i1}+\lambda_{i2}+
+F_{t1}+F_{t2}+\eta_{it,j},\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\eta_{it,j}\stackrel{\text{i.i.d}}{\sim} N(0,1) \qquad j\in \{1,2\}.\]</div>
+<p>The regressors are correlated with <span class="math notranslate nohighlight">\(\lambda_i\)</span>, <span class="math notranslate nohighlight">\(f_t\)</span>, and the product
+<span class="math notranslate nohighlight">\(\lambda_i' F_t\)</span>.
+The error term satisfies</p>
+<div class="math notranslate nohighlight">
+\[\epsilon_{it} \stackrel{\text{i.i.d}}{\sim}N(0,4).\]</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.analysis.monte_carlo_dgp.dgp_interactive_fixed_effects_model_with_common_and_time_invariant">
+<code class="sig-name descname"><span class="pre">dgp_interactive_fixed_effects_model_with_common_and_time_invariant</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/monte_carlo_dgp.html#dgp_interactive_fixed_effects_model_with_common_and_time_invariant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.monte_carlo_dgp.dgp_interactive_fixed_effects_model_with_common_and_time_invariant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Data generating process for “Interactive Fixed Effects Model with Common
+Regressors and Time-invariant Regressors”</p>
+<dl class="simple">
+<dt>T<span class="classifier">int</span></dt><dd><p>Sample size of time</p>
+</dd>
+<dt>N<span class="classifier">int</span></dt><dd><p>Sample size of entity</p>
+</dd>
+<dt>beta1<span class="classifier">float</span></dt><dd><p>Coefficient of x1</p>
+</dd>
+<dt>beta2<span class="classifier">float</span></dt><dd><p>Coefficient of x2</p>
+</dd>
+<dt>mu<span class="classifier">float</span></dt><dd><p>Constant</p>
+</dd>
+<dt>gamma<span class="classifier">float</span></dt><dd><p>Coefficient of x_i</p>
+</dd>
+<dt>delta<span class="classifier">float</span></dt><dd><p>Coefficient of w_t</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>X<span class="classifier">array-like</span></dt><dd><p>Simulate data of exogenous or right-hand-side variables (variable by time by
+entity).</p>
+</dd>
+<dt>Y<span class="classifier">array-like</span></dt><dd><p>Simulate data of dependent (left-hand-side) variable (time by entity).</p>
+</dd>
+</dl>
+<div class="math notranslate nohighlight">
+\[y_{it} = \beta_{1}x_{it,1}+\beta_{2}x_{it,2}+ \mu+ x_{i}\gamma +w_{t}\delta +
+\lambda_{i}'F_{t}+\epsilon_{it}\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[\lambda_i = \binom{\lambda_{i1}}{\lambda_{i2}} \stackrel{\text{i.i.d}}{\sim}
+N(0,I_2),
+F_t =\binom{F_{t1}}{F_{t2}}\stackrel{\text{i.i.d}}{\sim}N(0,I_2).\]</div>
+<p>The regressors are generated according to:</p>
+<div class="math notranslate nohighlight">
+\[X_{it,j}= 1+\lambda_{i1}F_{t1}+\lambda_{i2}F_{t2}+\lambda_{i1}+\lambda_{i2}+
+F_{t1}+F_{t2}+\eta_{it,j},\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\eta_{it,j}\stackrel{\text{i.i.d}}{\sim} N(0,1) \qquad j\in \{1,2\}.\]</div>
+<p>Additionally,  we set</p>
+<div class="math notranslate nohighlight">
+\[x_{i}=\lambda_{i1}+\lambda_{i2}+e_{i},
+\qquad e_{i} \stackrel{\text{i.i.d}}{\sim} N(0,1)\]</div>
+<p>and</p>
+<div class="math notranslate nohighlight">
+\[w_{t}=F_{t1}+F_{t2}+\eta_{t},
+\qquad \eta_{t} \stackrel{\text{i.i.d}}{\sim} N(0,1),\]</div>
+<p>so that <span class="math notranslate nohighlight">\(x_{i}\)</span> is correlated with <span class="math notranslate nohighlight">\(\lambda_i\)</span> and <span class="math notranslate nohighlight">\(w_t\)</span> is
+correlated with <span class="math notranslate nohighlight">\(f_t\)</span>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.analysis.monte_carlo_dgp.dgp_interactive_fixed_effects_model_with_common_and_time_invariant_no_iid">
+<code class="sig-name descname"><span class="pre">dgp_interactive_fixed_effects_model_with_common_and_time_invariant_no_iid</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/monte_carlo_dgp.html#dgp_interactive_fixed_effects_model_with_common_and_time_invariant_no_iid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.monte_carlo_dgp.dgp_interactive_fixed_effects_model_with_common_and_time_invariant_no_iid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Monte carlo data generate processor for “Interactive Fixed Effects Model with Common
+Regressors and Time-invariant Regressors”</p>
+<dl class="simple">
+<dt>T<span class="classifier">int</span></dt><dd><p>Sample size of time</p>
+</dd>
+<dt>N<span class="classifier">int</span></dt><dd><p>Sample size of entity</p>
+</dd>
+<dt>beta1<span class="classifier">float</span></dt><dd><p>Coefficient of x1</p>
+</dd>
+<dt>beta2<span class="classifier">float</span></dt><dd><p>Coefficient of x2</p>
+</dd>
+<dt>mu<span class="classifier">float</span></dt><dd><p>Constant</p>
+</dd>
+<dt>gamma<span class="classifier">float</span></dt><dd><p>Coefficient of x_i</p>
+</dd>
+<dt>delta<span class="classifier">float</span></dt><dd><p>Coefficient of w_t</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>X<span class="classifier">array-like</span></dt><dd><p>Simulate data of Exogenous or right-hand-side variables (variable by time by
+entity).</p>
+</dd>
+<dt>Y<span class="classifier">array-like</span></dt><dd><p>Simulate data of Dependent (left-hand-side) variable (time by entity).</p>
+</dd>
+</dl>
+<div class="math notranslate nohighlight">
+\[y_{it} = \beta_{1}x_{it,1}+\beta_{2}x_{it,2}+ \mu+ x_{i}\gamma +w_{t}\delta +
+\lambda_{i}'F_{t}+\epsilon_{it}\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[\lambda_i = \binom{\lambda_{i1}}{\lambda_{i2}} \stackrel{\text{i.i.d}}{\sim}
+N(0,I_2),
+F_{t,j}=0.7 \cdot F_{t-1,j}+ u_{t,j},\]</div>
+<p>with:</p>
+<div class="math notranslate nohighlight">
+\[u_{t,j}\stackrel{\text{i.i.d}}{\sim} N(0,1) \qquad j\in \{1,2\}.\]</div>
+<p>The regressors are generated according to:</p>
+<div class="math notranslate nohighlight">
+\[X_{it,j}= 1+\lambda_{i1}F_{t1}+\lambda_{i2}F_{t2}+\lambda_{i1}+\lambda_{i2}+
+F_{t1}+F_{t2}+\eta_{it,j},\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\eta_{it,j}\stackrel{\text{i.i.d}}{\sim} N(0,1) \qquad j\in \{1,2\}.\]</div>
+<p>Additionally,  we set</p>
+<div class="math notranslate nohighlight">
+\[x_{i}=\lambda_{i1}+\lambda_{i2}+e_{i},
+\qquad e_{i} \stackrel{\text{i.i.d}}{\sim} N(0,1)\]</div>
+<p>and</p>
+<div class="math notranslate nohighlight">
+\[w_{t}=F_{t1}+F_{t2}+\eta_{t},
+\qquad \eta_{t} \stackrel{\text{i.i.d}}{\sim} N(0,1),\]</div>
+<p>so that <span class="math notranslate nohighlight">\(x_{i}\)</span> is correlated with <span class="math notranslate nohighlight">\(\lambda_i\)</span> and <span class="math notranslate nohighlight">\(w_t\)</span> is
+correlated with <span class="math notranslate nohighlight">\(f_t\)</span>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.analysis.monte_carlo_dgp.dgp_random_iid_residual">
+<code class="sig-name descname"><span class="pre">dgp_random_iid_residual</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/monte_carlo_dgp.html#dgp_random_iid_residual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.monte_carlo_dgp.dgp_random_iid_residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Data generating process for random distributed residual.Residual = Y - beta * X = Lambda * Factor + epsShape of residual is (N, T).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.analysis.monte_carlo_dgp.dgp_time_invariant_fixed_effects_model">
+<code class="sig-name descname"><span class="pre">dgp_time_invariant_fixed_effects_model</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/monte_carlo_dgp.html#dgp_time_invariant_fixed_effects_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.monte_carlo_dgp.dgp_time_invariant_fixed_effects_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Data generating process for “Interactive Fixed Effects Model with Common
+Regressors and Time-invariant Regressors”</p>
+<dl class="simple">
+<dt>T<span class="classifier">int</span></dt><dd><p>Sample size of time</p>
+</dd>
+<dt>N<span class="classifier">int</span></dt><dd><p>Sample size of entity</p>
+</dd>
+<dt>beta1<span class="classifier">float</span></dt><dd><p>Coefficient of x1</p>
+</dd>
+<dt>beta2<span class="classifier">float</span></dt><dd><p>Coefficient of x2</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>X<span class="classifier">array-like</span></dt><dd><p>Simulate data of exogenous or right-hand-side variables (variable by time by
+entity).</p>
+</dd>
+<dt>Y<span class="classifier">array-like</span></dt><dd><p>Simulate data of dependent (left-hand-side) variable (time by entity).</p>
+</dd>
+</dl>
+<div class="math notranslate nohighlight">
+\[y_{it} = \beta_{1}x_{it,1}+\beta_{2}x_{it,2}+\alpha_{i}+\epsilon_{it}\]</div>
+<p>The regressors are generated according to <span class="math notranslate nohighlight">\(X_{it,j}=3+2\alpha_i+\eta_{it,j}\)</span>,
+with</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\eta_{it,j}\stackrel{\text{i.i.d}}{\sim} N(0,1), \qquad j\in \{1,2\},\\
+\alpha_i\stackrel{\text{i.i.d}}{\sim} N(0,1),\\
+\epsilon_{it}\stackrel{\text{i.i.d}}{\sim} N(0,4).\end{split}\]</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.analysis.simulation">
+<span id="monte-carlo-simulation"></span><span id="src-analysis-simulation"></span><h2>Monte Carlo Simulation<a class="headerlink" href="#module-src.analysis.simulation" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="src.analysis.simulation.simulation_coefficient">
+<code class="sig-name descname"><span class="pre">simulation_coefficient</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dgp_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsims</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">need_sde</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactive_start_value_effect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pooling'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">within_effect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'twoways'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">beta_true</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/simulation.html#simulation_coefficient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.simulation.simulation_coefficient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Monte carlo simulation to estimate beta hat and standard error of coefficient.</p>
+<dl class="simple">
+<dt>dgp_func<span class="classifier">function</span></dt><dd><p>One function in monte_carlo_dgp</p>
+</dd>
+<dt>all_N<span class="classifier">array-like</span></dt><dd><p>Different sample sizes of entity</p>
+</dd>
+<dt>all_T<span class="classifier">array-like</span></dt><dd><p>Different sample sizes of time</p>
+</dd>
+<dt>nsims<span class="classifier">int</span></dt><dd><p>Simulation times under the same N and T</p>
+</dd>
+<dt>need_sde<span class="classifier">bool</span></dt><dd><p>Flag the sde caculation conditions</p>
+</dd>
+<dt>tolerance<span class="classifier">float, optional</span></dt><dd><p>Iteration precision.</p>
+</dd>
+<dt>r<span class="classifier">int, optional</span></dt><dd><p>Number of factors.</p>
+</dd>
+<dt>interactive_start_value_effect<span class="classifier">string, optional</span></dt><dd><p>The effects used in package linearmodels for starting value, one of “pooling”,
+“twoways”</p>
+</dd>
+<dt>within_effect<span class="classifier">string, optional</span></dt><dd><p>The effects used in package linearmodels for within estimator, one of “twoways”,
+“individual”</p>
+</dd>
+<dt>beta_true<span class="classifier">float</span></dt><dd><p>Coefficient of variables used in dgp_func. Values in (“beta1”, “beta2”, “mu”,
+“gamma”, “delta”)</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>df_sim_result<span class="classifier">DataFrame</span></dt><dd><p>Columns are T, N, sim, beta_interactive, beta_within, sde_interactive,
+sde_within</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.analysis.simulation.statistics_coefficient">
+<code class="sig-name descname"><span class="pre">statistics_coefficient</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_sim_result</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">beta_true</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/simulation.html#statistics_coefficient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.simulation.statistics_coefficient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate statistics of each N &amp; T, take the mean of different simulations, and
+store them in a data frame. We include mean, bias, the RMSE, standard error and
+cofidence interval in our statistical results.</p>
+<dl class="simple">
+<dt>all_N<span class="classifier">array-like</span></dt><dd><p>Different sample sizes of entity</p>
+</dd>
+<dt>all_T<span class="classifier">array-like</span></dt><dd><p>Different sample sizes of time</p>
+</dd>
+<dt>nsims<span class="classifier">int</span></dt><dd><p>Simulation times under the same N and T</p>
+</dd>
+<dt>df_sim_result<span class="classifier">DataFrame</span></dt><dd><p>Simulation results from function <cite>simulation_coefficient</cite></p>
+</dd>
+<dt>beta_true<span class="classifier">float</span></dt><dd><p>Coefficients of variables used in dgp_func. Values in (“beta1”, “beta2”, “mu”,
+“gamma”, “delta”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-src.analysis.task_simulation_coefficient">
+<span id="estimation-of-slope-coefficients"></span><span id="src-analysis-task-simulation-coefficient"></span><h2>Estimation of slope coefficients<a class="headerlink" href="#module-src.analysis.task_simulation_coefficient" title="Permalink to this headline">¶</a></h2>
+<p>Task for applying different models, number of individuals and time periods to function
+<cite>simulation_coefficient</cite>.</p>
+</div>
+<div class="section" id="module-src.analysis.task_statistics_coefficient">
+<span id="statistics"></span><h2>Statistics<a class="headerlink" href="#module-src.analysis.task_statistics_coefficient" title="Permalink to this headline">¶</a></h2>
+<p>Task for caculating statistical results for coefficients by using <cite>statistics_coefficient</cite>
+function. The inputs of the function come from <cite>task_simulation_coefficient</cite>.</p>
+</div>
+<div class="section" id="module-src.analysis.task_simulation_factor">
+<span id="estimation-of-the-number-of-factors"></span><h2>Estimation of the number of factors<a class="headerlink" href="#module-src.analysis.task_simulation_factor" title="Permalink to this headline">¶</a></h2>
+<p>Task for estimating the parameters in interactive fixed effects model by using different
+numbers of factors.Task for estimating factor numbers in interactive fixed effects model by choosing
+different penalty functions g1,g2,g3 with criterias PC and IC.</p>
+<dl class="py function">
+<dt id="src.analysis.task_simulation_factor.task_factor_estimate_interactive_fixed_effects_model">
+<code class="sig-name descname"><span class="pre">task_factor_estimate_interactive_fixed_effects_model</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">produces</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/task_simulation_factor.html#task_factor_estimate_interactive_fixed_effects_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.task_simulation_factor.task_factor_estimate_interactive_fixed_effects_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Task for estimating factor numbers in interactive fixed effects model.
+We choose different penalty functions g1,g2,g3 with criterias PC and IC.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.analysis.task_simulation_factor.task_factor_estimate_random_iid_residual">
+<code class="sig-name descname"><span class="pre">task_factor_estimate_random_iid_residual</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">produces</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/task_simulation_factor.html#task_factor_estimate_random_iid_residual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.task_simulation_factor.task_factor_estimate_random_iid_residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Task for estimating factor numbers in the model defined by the function
+<cite>dgp_random_iid_residual</cite>.
+We choose different penalty functions g1,g2,g3 with criterias PC and IC.
+It replicates the result of Table 2 in Bai,Ng (2002), page 205.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="src.analysis.task_simulation_factor.task_simulation_and_statistics_range_r">
+<code class="sig-name descname"><span class="pre">task_simulation_and_statistics_range_r</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">depends_on</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">produces</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/analysis/task_simulation_factor.html#task_simulation_and_statistics_range_r"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.analysis.task_simulation_factor.task_simulation_and_statistics_range_r" title="Permalink to this definition">¶</a></dt>
+<dd><p>Task for estimating the parameters in interactive fixed effects model by using
+different numbers of factors.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="data_management.html">Data management</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="final.html">Visualisation and results formatting</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-March, Yuxin Wang.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.3.
+    </div>
+  </body>
+</html>

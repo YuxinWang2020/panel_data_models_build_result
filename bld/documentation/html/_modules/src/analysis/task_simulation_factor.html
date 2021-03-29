@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>src.analysis.task_simulation_factor &#8212; Panel Data Models with Fixed Effects  documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>Panel Data Models with Fixed Effects  documentation</span></a></h1>
+        <h2 class="heading"><span>src.analysis.task_simulation_factor</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <h1>Source code for src.analysis.task_simulation_factor</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Task for estimating the parameters in interactive fixed effects model by using different</span>
+<span class="sd">numbers of factors.\\</span>
+<span class="sd">Task for estimating factor numbers in interactive fixed effects model by choosing</span>
+<span class="sd">different penalty functions g1,g2,g3 with criterias PC and IC.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pytask</span>
+<span class="kn">from</span> <span class="nn">linearmodels.panel</span> <span class="kn">import</span> <span class="n">PooledOLS</span>
+
+<span class="kn">from</span> <span class="nn">src.analysis.monte_carlo_dgp</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">dgp_interactive_fixed_effects_model_with_common_and_time_invariant</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">src.analysis.monte_carlo_dgp</span> <span class="kn">import</span> <span class="n">dgp_random_iid_residual</span>
+<span class="kn">from</span> <span class="nn">src.analysis.simulation</span> <span class="kn">import</span> <span class="n">simulation_coefficient</span>
+<span class="kn">from</span> <span class="nn">src.analysis.simulation</span> <span class="kn">import</span> <span class="n">statistics_coefficient</span>
+<span class="kn">from</span> <span class="nn">src.config</span> <span class="kn">import</span> <span class="n">BLD</span>
+<span class="kn">from</span> <span class="nn">src.config</span> <span class="kn">import</span> <span class="n">SRC</span>
+<span class="kn">from</span> <span class="nn">src.model_code.factor_estimator</span> <span class="kn">import</span> <span class="n">FactorEstimator</span>
+<span class="kn">from</span> <span class="nn">src.model_code.interactive_fixed_effect</span> <span class="kn">import</span> <span class="n">InteractiveFixedEffect</span>
+
+
+<div class="viewcode-block" id="task_simulation_and_statistics_range_r"><a class="viewcode-back" href="../../../analysis.html#src.analysis.task_simulation_factor.task_simulation_and_statistics_range_r">[docs]</a><span class="nd">@pytask</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">depends_on</span><span class="p">(</span><span class="n">SRC</span> <span class="o">/</span> <span class="s2">&quot;model_specs&quot;</span> <span class="o">/</span> <span class="s2">&quot;range_r_model4.json&quot;</span><span class="p">)</span>
+<span class="nd">@pytask</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">produces</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;sim_result&quot;</span><span class="p">:</span> <span class="n">BLD</span> <span class="o">/</span> <span class="s2">&quot;analysis&quot;</span> <span class="o">/</span> <span class="s2">&quot;sim_result_range_r.csv&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;statistic&quot;</span><span class="p">:</span> <span class="n">BLD</span> <span class="o">/</span> <span class="s2">&quot;analysis&quot;</span> <span class="o">/</span> <span class="s2">&quot;statistic_range_r.csv&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">task_simulation_and_statistics_range_r</span><span class="p">(</span><span class="n">depends_on</span><span class="p">,</span> <span class="n">produces</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Task for estimating the parameters in interactive fixed effects model by using</span>
+<span class="sd">    different numbers of factors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># set parameters</span>
+    <span class="n">simulate</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">depends_on</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+    <span class="n">dgp_func</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;dgp_func&quot;</span><span class="p">]]</span>
+    <span class="n">all_r</span> <span class="o">=</span> <span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;all_r&quot;</span><span class="p">]</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;rng_seed&quot;</span><span class="p">])</span>
+    <span class="c1"># Run the monte carlo simulation</span>
+    <span class="n">df_sim_range_r</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="n">df_statistic_range_r</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">all_r</span><span class="p">:</span>
+        <span class="n">df_sim_result</span> <span class="o">=</span> <span class="n">simulation_coefficient</span><span class="p">(</span>
+            <span class="n">dgp_func</span><span class="o">=</span><span class="n">dgp_func</span><span class="p">,</span>
+            <span class="n">all_N</span><span class="o">=</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;all_N&quot;</span><span class="p">],</span>
+            <span class="n">all_T</span><span class="o">=</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;all_T&quot;</span><span class="p">],</span>
+            <span class="n">nsims</span><span class="o">=</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;nsims&quot;</span><span class="p">],</span>
+            <span class="n">need_sde</span><span class="o">=</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;need_sde&quot;</span><span class="p">],</span>
+            <span class="n">tolerance</span><span class="o">=</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;tolerance&quot;</span><span class="p">],</span>
+            <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span>
+            <span class="n">interactive_start_value_effect</span><span class="o">=</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;interactive_start_value_effect&quot;</span><span class="p">],</span>
+            <span class="n">within_effect</span><span class="o">=</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;within_effect&quot;</span><span class="p">],</span>
+            <span class="o">**</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;beta_true&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">df_statistic</span> <span class="o">=</span> <span class="n">statistics_coefficient</span><span class="p">(</span>
+            <span class="n">all_N</span><span class="o">=</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;all_N&quot;</span><span class="p">],</span>
+            <span class="n">all_T</span><span class="o">=</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;all_T&quot;</span><span class="p">],</span>
+            <span class="n">nsims</span><span class="o">=</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;nsims&quot;</span><span class="p">],</span>
+            <span class="n">df_sim_result</span><span class="o">=</span><span class="n">df_sim_result</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">simulate</span><span class="p">[</span><span class="s2">&quot;beta_true&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">df_sim_range_r</span> <span class="o">=</span> <span class="n">df_sim_range_r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">*</span> <span class="n">df_sim_result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]}),</span> <span class="n">df_sim_result</span><span class="p">],</span>
+                <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">df_statistic_range_r</span> <span class="o">=</span> <span class="n">df_statistic_range_r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">*</span> <span class="n">df_statistic</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]}),</span> <span class="n">df_statistic</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="c1"># Store df_sim_range_r and df_statistic_range_r</span>
+    <span class="n">df_sim_range_r</span> <span class="o">=</span> <span class="n">df_sim_range_r</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df_sim_range_r</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">produces</span><span class="p">[</span><span class="s2">&quot;sim_result&quot;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">df_statistic_range_r</span> <span class="o">=</span> <span class="n">df_statistic_range_r</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df_statistic_range_r</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">produces</span><span class="p">[</span><span class="s2">&quot;statistic&quot;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="task_factor_estimate_random_iid_residual"><a class="viewcode-back" href="../../../analysis.html#src.analysis.task_simulation_factor.task_factor_estimate_random_iid_residual">[docs]</a><span class="nd">@pytask</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">produces</span><span class="p">(</span><span class="n">BLD</span> <span class="o">/</span> <span class="s2">&quot;tables&quot;</span> <span class="o">/</span> <span class="s2">&quot;determine_num_of_factors_random_iid.csv&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">task_factor_estimate_random_iid_residual</span><span class="p">(</span><span class="n">produces</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Task for estimating factor numbers in the model defined by the function</span>
+<span class="sd">    `dgp_random_iid_residual`.</span>
+<span class="sd">    We choose different penalty functions g1,g2,g3 with criterias PC and IC.</span>
+<span class="sd">    It replicates the result of Table 2 in Bai,Ng (2002), page 205.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">rmax</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">nsims</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">all_N</span> <span class="o">=</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">]</span>
+    <span class="n">all_T</span> <span class="o">=</span> <span class="p">[</span><span class="mi">40</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">60</span><span class="p">]</span>
+    <span class="n">df_factor_estimate</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_N</span><span class="p">)):</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">all_N</span><span class="p">[</span><span class="n">case</span><span class="p">]</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">all_T</span><span class="p">[</span><span class="n">case</span><span class="p">]</span>
+        <span class="n">df_sim</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">nsims</span><span class="p">),</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;PC1&quot;</span><span class="p">,</span> <span class="s2">&quot;PC2&quot;</span><span class="p">,</span> <span class="s2">&quot;PC3&quot;</span><span class="p">,</span> <span class="s2">&quot;IC1&quot;</span><span class="p">,</span> <span class="s2">&quot;IC2&quot;</span><span class="p">,</span> <span class="s2">&quot;IC3&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">df_sim</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">*</span> <span class="n">nsims</span>
+        <span class="n">df_sim</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">N</span><span class="p">]</span> <span class="o">*</span> <span class="n">nsims</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsims</span><span class="p">):</span>
+            <span class="n">residual</span> <span class="o">=</span> <span class="n">dgp_random_iid_residual</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+            <span class="n">factor_estimator</span> <span class="o">=</span> <span class="n">FactorEstimator</span><span class="p">(</span><span class="n">residual</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;PC1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;PC&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;PC2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;PC&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;PC3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;PC&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;IC1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;IC&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;IC2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;IC&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;IC3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;IC&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">df_factor_estimate</span> <span class="o">=</span> <span class="n">df_factor_estimate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df_sim</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="p">)</span>
+    <span class="n">df_factor_estimate</span> <span class="o">=</span> <span class="n">df_factor_estimate</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df_factor_estimate</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">produces</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="task_factor_estimate_interactive_fixed_effects_model"><a class="viewcode-back" href="../../../analysis.html#src.analysis.task_simulation_factor.task_factor_estimate_interactive_fixed_effects_model">[docs]</a><span class="nd">@pytask</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">produces</span><span class="p">(</span><span class="n">BLD</span> <span class="o">/</span> <span class="s2">&quot;tables&quot;</span> <span class="o">/</span> <span class="s2">&quot;determine_num_of_factors_model4.csv&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">task_factor_estimate_interactive_fixed_effects_model</span><span class="p">(</span><span class="n">produces</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Task for estimating factor numbers in interactive fixed effects model.</span>
+<span class="sd">    We choose different penalty functions g1,g2,g3 with criterias PC and IC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rmax</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">nsims</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">all_N</span> <span class="o">=</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
+    <span class="n">all_T</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+    <span class="n">dgp_func</span> <span class="o">=</span> <span class="n">dgp_interactive_fixed_effects_model_with_common_and_time_invariant</span>
+    <span class="n">tolerance</span> <span class="o">=</span> <span class="mf">0.0001</span>
+    <span class="n">beta_true</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;beta1&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;beta2&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;delta&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
+    <span class="n">r0</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">df_factor_estimate</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_N</span><span class="p">)):</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">all_N</span><span class="p">[</span><span class="n">case</span><span class="p">]</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">all_T</span><span class="p">[</span><span class="n">case</span><span class="p">]</span>
+        <span class="n">df_sim</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">nsims</span><span class="p">),</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;PC1&quot;</span><span class="p">,</span> <span class="s2">&quot;PC2&quot;</span><span class="p">,</span> <span class="s2">&quot;PC3&quot;</span><span class="p">,</span> <span class="s2">&quot;IC1&quot;</span><span class="p">,</span> <span class="s2">&quot;IC2&quot;</span><span class="p">,</span> <span class="s2">&quot;IC3&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">df_sim</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">*</span> <span class="n">nsims</span>
+        <span class="n">df_sim</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">N</span><span class="p">]</span> <span class="o">*</span> <span class="n">nsims</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsims</span><span class="p">):</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">panel_df</span> <span class="o">=</span> <span class="n">dgp_func</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="o">**</span><span class="n">beta_true</span><span class="p">)</span>
+            <span class="n">start_value_estimator</span> <span class="o">=</span> <span class="n">PooledOLS</span><span class="p">(</span>
+                <span class="n">panel_df</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">panel_df</span><span class="p">[[</span><span class="s2">&quot;x&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">)]]</span>
+            <span class="p">)</span>
+            <span class="n">start_value_result</span> <span class="o">=</span> <span class="n">start_value_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+            <span class="n">interactive_start_value</span> <span class="o">=</span> <span class="n">start_value_result</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">interactive_estimator</span> <span class="o">=</span> <span class="n">InteractiveFixedEffect</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+            <span class="n">beta_hat</span><span class="p">,</span> <span class="n">beta_hat_list</span><span class="p">,</span> <span class="n">f_hat</span><span class="p">,</span> <span class="n">lambda_hat</span> <span class="o">=</span> <span class="n">interactive_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+                <span class="n">r0</span><span class="p">,</span> <span class="n">interactive_start_value</span><span class="p">,</span> <span class="n">tolerance</span>
+            <span class="p">)</span>
+            <span class="n">residual</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">-</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">beta_hat</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">factor_estimator</span> <span class="o">=</span> <span class="n">FactorEstimator</span><span class="p">(</span><span class="n">residual</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;PC1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;PC&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;PC2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;PC&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;PC3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;PC&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;IC1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;IC&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;IC2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;IC&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">df_sim</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;IC3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor_estimator</span><span class="o">.</span><span class="n">r_hat</span><span class="p">(</span><span class="n">rmax</span><span class="p">,</span> <span class="s2">&quot;IC&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">df_factor_estimate</span> <span class="o">=</span> <span class="n">df_factor_estimate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df_sim</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="p">)</span>
+    <span class="n">df_factor_estimate</span> <span class="o">=</span> <span class="n">df_factor_estimate</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df_factor_estimate</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">produces</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-March, Yuxin Wang.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.3.
+    </div>
+  </body>
+</html>
